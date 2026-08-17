@@ -64,6 +64,29 @@ e.innerHTML=`<div class="actions print"><button class="danger" onclick="elimina(
   <input id="ups-file" type="file" accept=".html,text/html" style="display:none" onchange="importaRapportoUPS(this)">
   <button class="secondary print" onclick="document.getElementById('ups-file').click()">📥 Importa rapportino HTML</button>
 </div>
+<div style="margin-top:10px">
+  <button class="secondary print" onclick="toggleManualUPS()">＋ Inserisci UPS manualmente</button>
+</div>
+<div id="manual-ups-form" class="import-box" style="display:none;margin-top:10px">
+  <div style="font-weight:800;color:#173c91;margin-bottom:8px">Inserimento manuale apparecchiatura UPS</div>
+  <div class="form">
+    <div><label>Posizione / collocamento</label><input id="mu_location" placeholder="es. Sala quadri"></div>
+    <div><label>Marca / modello</label><input id="mu_model" placeholder="es. KEOR COMPACT"></div>
+    <div><label>Numero di serie</label><input id="mu_serial"></div>
+    <div><label>Potenza (VA)</label><input id="mu_power" placeholder="es. 10000"></div>
+    <div><label>M.I.S.</label><input id="mu_mis"></div>
+    <div><label>By Pass esterno</label><input id="mu_bypass"></div>
+    <div><label>N° batterie</label><input id="mu_batteryCount" placeholder="es. 36"></div>
+    <div><label>Tipo / marca batteria</label><input id="mu_batteryType" placeholder="es. 9 Ah Yuasa"></div>
+    <div><label>Mese / anno installazione</label><input id="mu_batteryDate" placeholder="es. 06/2025"></div>
+    <div><label>Materiale sostituito</label><input id="mu_materialReplaced"></div>
+    <div class="full"><label>Componenti / note</label><textarea id="mu_note" style="min-height:70px"></textarea></div>
+  </div>
+  <div class="actions" style="margin-top:10px">
+    <button class="primary" onclick="addManualUPS()">💾 Aggiungi UPS</button>
+    <button class="secondary" onclick="toggleManualUPS(false)">Annulla</button>
+  </div>
+</div>
 <div id="ups-list-detail">${renderUPS(x.ups)}</div>
 </div>
 
@@ -74,7 +97,7 @@ e.innerHTML=`<div class="actions print"><button class="danger" onclick="elimina(
 }
 
 function renderUPS(arr){
-  if(!arr || !arr.length) return '<div class="meta" style="margin-top:10px">Nessuna apparecchiatura importata.</div>';
+  if(!arr || !arr.length) return '<div class="meta" style="margin-top:10px">Nessuna apparecchiatura UPS inserita. Puoi importarla dal rapportino oppure inserirla manualmente.</div>';
   return arr.map((u,i)=>`<div class="ups-card">
     <div class="ups-head">
       <div><div class="ups-name">⚡ UPS ${i+1} · ${esc(u.model||"Modello non indicato")}</div><div class="meta">${esc(u.location||"Posizione non indicata")}</div></div>
@@ -98,6 +121,32 @@ function renderUPS(arr){
     ${(u.components||"")?`<div class="meta" style="margin-top:9px"><b>Componenti:</b> ${esc(u.components)}</div>`:""}
     ${(u.note||"")?`<div class="note" style="margin-top:9px">${esc(u.note)}</div>`:""}
   </div>`).join("");
+}
+
+function toggleManualUPS(show){
+  const f=document.getElementById("manual-ups-form");
+  if(!f)return;
+  if(show===undefined) show=f.style.display==="none";
+  f.style.display=show?"block":"none";
+  if(show) document.getElementById("mu_model")?.focus();
+}
+function addManualUPS(){
+  const x=db.find(z=>z.id==sel); if(!x)return;
+  const v=id=>document.getElementById(id)?.value.trim()||"";
+  const model=v("mu_model");
+  if(!model){
+    alert("Inserisci almeno marca / modello dell'UPS.");
+    document.getElementById("mu_model")?.focus();
+    return;
+  }
+  x.ups.push({
+    sourceFile:"Inserimento manuale",
+    location:v("mu_location"), model, serial:v("mu_serial"), power:v("mu_power"),
+    mis:v("mu_mis"), bypass:v("mu_bypass"), batteryCount:v("mu_batteryCount"),
+    batteryType:v("mu_batteryType"), batteryDate:v("mu_batteryDate"),
+    materialReplaced:v("mu_materialReplaced"), components:"", note:v("mu_note")
+  });
+  save(); editor();
 }
 
 function importaRapportoUPS(input){
