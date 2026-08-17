@@ -14,7 +14,7 @@ label{display:block;font-size:12px;font-weight:bold;color:#68727a;margin:9px 0 4
 .info{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:12px 0}.box{background:#f4f6f8;padding:9px;border-radius:8px}.box small{display:block;color:#727d84;font-size:10px;font-weight:bold}
 .section{border-top:1px solid #dfe3e6;margin-top:16px;padding-top:10px}.empty{text-align:center;color:#77838b;padding:35px}
 @media(max-width:850px){.grid{grid-template-columns:1fr}header{flex-direction:column}header img{width:100%}.info{grid-template-columns:1fr 1fr}}
-@media print{body{background:white}.app{padding:0}.left{display:none}header{box-shadow:none}.panel{box-shadow:none}.print{display:none!important}}
+@media print{.screen-ups-icon{display:none!important}body{background:white}.app{padding:0}.left{display:none}header{box-shadow:none}.panel{box-shadow:none}.print{display:none!important}}
 
 <style>
 .ups-card{border:1px solid #cfd8e3;border-radius:12px;padding:12px;margin:10px 0;background:#fbfcfe}
@@ -50,7 +50,7 @@ function lista(){let q=(search.value||"").toLowerCase(),f=filter.value;
 function seleziona(id){sel=id;lista();editor()}
 function editor(){let x=db.find(z=>z.id==sel),e=document.getElementById("editor");if(!x){e.innerHTML='<div class="empty"><h2>Nessun intervento</h2><button class="primary" onclick="nuovo()">＋ Nuovo intervento</button></div>';return}
 if(!x.ups)x.ups=[];
-e.innerHTML=`<div class="actions print"><button class="danger" onclick="elimina()">🗑 Elimina</button></div><h2>Intervento</h2><div class="meta">Puoi importare direttamente il rapportino HTML generato dal collega.</div>
+e.innerHTML=`<div class="actions print"><button class="danger" onclick="elimina()">🗑 Elimina</button></div><h2>Intervento</h2><div class="meta print">Puoi importare direttamente il rapportino HTML generato dal collega.</div>
 <div class="form"><div><label>Data</label><input id="date" type="date" value="${esc(x.date)}"></div><div><label>Ora</label><input id="time" type="time" value="${esc(x.time)}"></div>
 <div class="full"><label>Cliente</label><input id="client" value="${esc(x.client)}"></div><div><label>Luogo / sede</label><input id="location" value="${esc(x.location)}"></div>
 <div><label>Stato</label><select id="status">${["Aperto","Programmato","In corso","Completato"].map(s=>`<option ${x.status==s?"selected":""}>${s}</option>`).join("")}</select></div>
@@ -58,7 +58,7 @@ e.innerHTML=`<div class="actions print"><button class="danger" onclick="elimina(
 <div class="full"><label>Sala / reparto</label><input id="room" value="${esc(x.room)}"></div></div>
 
 <div class="section"><h3>⚡ Apparecchiature UPS</h3>
-<div class="import-box">
+<div class="import-box print">
   <div style="font-weight:800;color:#173c91">Importa dati dal rapportino UPS del collega</div>
   <div class="meta" style="margin:5px 0 9px">Seleziona il file HTML generato dal Rapportino UPS. Verranno importati cliente, indirizzo, referente, telefono e i dati delle apparecchiature UPS, anche per più UPS.</div>
   <input id="ups-file" type="file" accept=".html,text/html" style="display:none" onchange="importaRapportoUPS(this)">
@@ -67,7 +67,7 @@ e.innerHTML=`<div class="actions print"><button class="danger" onclick="elimina(
 <div style="margin-top:10px">
   <button class="secondary print" onclick="toggleManualUPS()">＋ Inserisci UPS manualmente</button>
 </div>
-<div id="manual-ups-form" class="import-box" style="display:none;margin-top:10px">
+<div id="manual-ups-form" class="import-box print" style="display:none;margin-top:10px">
   <div style="font-weight:800;color:#173c91;margin-bottom:8px">Inserimento manuale apparecchiatura UPS</div>
   <div class="form">
     <div><label>Posizione / collocamento</label><input id="mu_location" placeholder="es. Sala quadri"></div>
@@ -97,10 +97,10 @@ e.innerHTML=`<div class="actions print"><button class="danger" onclick="elimina(
 }
 
 function renderUPS(arr){
-  if(!arr || !arr.length) return '<div class="meta" style="margin-top:10px">Nessuna apparecchiatura UPS inserita. Puoi importarla dal rapportino oppure inserirla manualmente.</div>';
+  if(!arr || !arr.length) return '<div class="meta print" style="margin-top:10px">Nessuna apparecchiatura UPS inserita. Puoi importarla dal rapportino oppure inserirla manualmente.</div>';
   return arr.map((u,i)=>`<div class="ups-card">
     <div class="ups-head">
-      <div><div class="ups-name">⚡ UPS ${i+1} · ${esc(u.model||"Modello non indicato")}</div><div class="meta">${esc(u.location||"Posizione non indicata")}</div></div>
+      <div><div class="ups-name"><span class="screen-ups-icon">⚡ </span>UPS ${i+1} · ${esc(u.model||"Modello non indicato")}</div><div class="meta">${esc(u.location||"Posizione non indicata")}</div></div>
       <button class="danger print" style="padding:6px 9px" onclick="removeUPS(${i})">×</button>
     </div>
     <div class="ups-grid">
@@ -110,7 +110,7 @@ function renderUPS(arr){
       <div class="ups-box"><small>By Pass esterno</small><strong>${esc(u.bypass||"—")}</strong></div>
     </div>
     <div class="ups-battery">
-      <div class="ups-battery-title">🔋 Batterie</div>
+      <div class="ups-battery-title"><span class="screen-ups-icon">🔋 </span>Batterie</div>
       <div class="ups-grid">
         <div class="ups-box"><small>Numero / configurazione</small><strong>${esc(u.batteryCount||"—")}</strong></div>
         <div class="ups-box"><small>Tipo / Marca</small><strong>${esc(u.batteryType||"—")}</strong></div>
