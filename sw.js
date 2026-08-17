@@ -1,4 +1,4 @@
-const CACHE='gestione-interventi-v2';
+const CACHE='gestione-interventi-v3';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', event => {

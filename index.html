@@ -43,10 +43,10 @@ const KEY="interventi_ups_lorenzi";let db=JSON.parse(localStorage.getItem(KEY)||
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const date=d=>d?d.split("-").reverse().join("/"):"—";
 function save(){localStorage.setItem(KEY,JSON.stringify(db));lista()}
-function nuovo(){let x={id:Date.now(),date:new Date().toISOString().slice(0,10),time:"08:30",client:"",location:"",contact:"",phone:"",status:"Aperto",room:"",works:[],notes:"",ups:[]};db.unshift(x);sel=x.id;save();editor()}
+function nuovo(){let x={id:Date.now(),date:new Date().toISOString().slice(0,10),time:"08:30",client:"",location:"",address:"",contact:"",phone:"",status:"Aperto",room:"",works:[],notes:"",ups:[]};db.unshift(x);sel=x.id;save();editor()}
 function lista(){let q=(search.value||"").toLowerCase(),f=filter.value;
  let a=db.filter(x=>(!f||x.status==f)&&(`${x.client} ${x.location} ${x.room}`).toLowerCase().includes(q));
- listaEl=document.getElementById("lista");listaEl.innerHTML=a.length?a.map(x=>`<div class="item ${x.id==sel?"sel":""} ${x.status=="Completato"?"done":x.status=="In corso"?"prog":""}" onclick="seleziona(${x.id})"><span class="badge">${esc(x.status)}</span><div class="client">${esc(x.client||"Nuovo cliente")}</div><div class="meta">📅 ${date(x.date)} · ⏰ ${esc(x.time)}</div><div class="meta">📍 ${esc(x.location||"Luogo non indicato")}</div></div>`).join(""):'<div class="empty">Nessun intervento</div>'}
+ listaEl=document.getElementById("lista");listaEl.innerHTML=a.length?a.map(x=>`<div class="item ${x.id==sel?"sel":""} ${x.status=="Completato"?"done":x.status=="In corso"?"prog":""}" onclick="seleziona(${x.id})"><span class="badge">${esc(x.status)}</span><div class="client">${esc(x.client||"Nuovo cliente")}</div><div class="meta">📅 ${date(x.date)} · ⏰ ${esc(x.time)}</div><div class="meta">📍 ${esc(x.location||"Luogo non indicato")}</div>${x.address?`<div class="meta">🏠 ${esc(x.address)}</div>`:""}</div>`).join(""):'<div class="empty">Nessun intervento</div>'}
 function seleziona(id){sel=id;lista();editor()}
 function editor(){let x=db.find(z=>z.id==sel),e=document.getElementById("editor");if(!x){e.innerHTML='<div class="empty"><h2>Nessun intervento</h2><button class="primary" onclick="nuovo()">＋ Nuovo intervento</button></div>';return}
 if(!x.ups)x.ups=[];
@@ -60,7 +60,7 @@ e.innerHTML=`<div class="actions print"><button class="danger" onclick="elimina(
 <div class="section"><h3>⚡ Apparecchiature UPS</h3>
 <div class="import-box">
   <div style="font-weight:800;color:#173c91">Importa dati dal rapportino UPS del collega</div>
-  <div class="meta" style="margin:5px 0 9px">Seleziona il file HTML generato dal Rapportino UPS. Verranno importati marca/modello, seriale, potenza, M.I.S., posizione, batterie, componenti e note, anche per più UPS.</div>
+  <div class="meta" style="margin:5px 0 9px">Seleziona il file HTML generato dal Rapportino UPS. Verranno importati cliente, indirizzo, referente, telefono e i dati delle apparecchiature UPS, anche per più UPS.</div>
   <input id="ups-file" type="file" accept=".html,text/html" style="display:none" onchange="importaRapportoUPS(this)">
   <button class="secondary print" onclick="document.getElementById('ups-file').click()">📥 Importa rapportino HTML</button>
 </div>
@@ -109,9 +109,22 @@ function importaRapportoUPS(input){
       const node=doc.querySelector("#__saved_data__");
       if(!node) throw new Error("Il file non contiene i dati salvati del rapportino UPS.");
       const D=JSON.parse(node.textContent||node.innerHTML||"");
-      const ids=[...new Set(Object.keys(D).map(k=>{const m=k.match(/^u_mod_(.+)$/);return m?m[1]:null}).filter(Boolean))];
-      if(!ids.length) throw new Error("Nel rapportino non sono presenti apparecchiature UPS.");
       const x=db.find(z=>z.id==sel); if(!x.ups)x.ups=[];
+
+      // Dati cliente
+      if(D.cliente) x.client=String(D.cliente).trim();
+      if(D.indirizzo) x.address=String(D.indirizzo).trim();
+      const loc=[D.localita,D.provincia].filter(Boolean).join(" – ");
+      if(loc) x.location=String(loc).trim();
+      if(D.referente) x.contact=String(D.referente).trim();
+      if(D.telefono) x.phone=String(D.telefono).trim();
+
+      // Apparecchiature UPS
+      const ids=[...new Set(Object.keys(D).map(k=>{
+        const m=k.match(/^u_mod_(.+)$/); return m?m[1]:null
+      }).filter(Boolean))];
+      if(!ids.length) throw new Error("Nel rapportino non sono presenti apparecchiature UPS.");
+
       ids.forEach(id=>{
         const get=k=>D[k+"_"+id]??"";
         const parts=[];
@@ -125,16 +138,18 @@ function importaRapportoUPS(input){
           get("u_raff")&&("Ventilatori: "+get("u_raff")),
           parts.length&&("Materiali: "+parts.join(", "))
         ].filter(Boolean).join(" · ");
+
         x.ups.push({
-          sourceFile:file.name,
-          location:get("u_loc"), model:get("u_mod"), serial:get("u_sn"), power:get("u_kva"),
-          mis:get("u_mis"), bypass:get("u_bypass"), batteryCount:get("u_nbatt"),
+          sourceFile:file.name, location:get("u_loc"), model:get("u_mod"),
+          serial:get("u_sn"), power:get("u_kva"), mis:get("u_mis"),
+          bypass:get("u_bypass"), batteryCount:get("u_nbatt"),
           batteryType:get("u_tipobatt"), batteryDate:get("u_dbatt2"),
           materialReplaced:get("u_matsost"), components, note:get("u_note")
         });
       });
+
       save(); editor();
-      alert(ids.length+" apparecchiatura/e UPS importata/e.");
+      alert("Importati cliente, contatti e "+ids.length+" apparecchiatura/e UPS.");
     }catch(err){alert("Importazione non riuscita: "+err.message)}
     input.value="";
   };
@@ -143,7 +158,7 @@ function importaRapportoUPS(input){
 
 function removeUPS(i){const x=db.find(z=>z.id==sel);x.ups.splice(i,1);save();editor()}
 
-function salva(){let x=db.find(z=>z.id==sel);["date","time","client","location","status","contact","phone","room","notes"].forEach(k=>x[k]=document.getElementById(k).value.trim());save();editor()}
+function salva(){let x=db.find(z=>z.id==sel);["date","time","client","location","address","status","contact","phone","room","notes"].forEach(k=>x[k]=document.getElementById(k).value.trim());save();editor()}
 function addWork(){let v=document.getElementById("newwork").value.trim();if(!v)return;db.find(x=>x.id==sel).works.push({text:v,done:false});editor()}
 function toggle(i){let x=db.find(x=>x.id==sel);x.works[i].done=!x.works[i].done;save()}
 function removeWork(i){db.find(x=>x.id==sel).works.splice(i,1);editor()}
