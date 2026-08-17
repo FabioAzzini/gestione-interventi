@@ -332,4 +332,12 @@ function elimina(){if(confirm("Eliminare questo intervento?")){db=db.filter(x=>x
 function esporta(){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}));a.download="interventi_backup.json";a.click()}
 function importa(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=e=>{let r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);sel=db[0]?.id||null;save();editor()}catch{alert("File non valido")}};r.readAsText(e.target.files[0])};i.click()}
 if(!db.length){db=[{id:1,date:"2026-08-19",time:"08:30",client:"Stef Italia (Rif. Cubi)",location:"Nogarole Rocca",contact:"Matteo Meneghelli",phone:"340 240 7271",status:"Programmato",room:"Sala quadri logistica",ups:[],works:[{text:"KEOR COMPACT: sostituire n. 36 batterie da 9 Ah, esclusivamente nell'UPS.",done:false},{text:"TRIMOD MCS + B.BOX: eseguire esclusivamente il reset da PC.",done:false}],notes:""}];save()}sel=db[0].id;lista();editor();
-</script></body></html>
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', {scope: './'}).catch(() => {});
+  });
+}
+</script>
+</body></html>
