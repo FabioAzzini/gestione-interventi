@@ -61,8 +61,8 @@ e.innerHTML=`<div class="actions print"><button class="danger" onclick="elimina(
 <div class="section"><h3>⚡ Apparecchiature UPS</h3>
 <div class="import-box print">
   <div style="font-weight:800;color:#173c91">Importa dati dal rapportino UPS del collega</div>
-  <div class="meta" style="margin:5px 0 9px">Seleziona un rapportino HTML, XLS o XLSX. Verranno importati cliente, indirizzo, referente, telefono e i dati delle apparecchiature UPS, anche per più UPS.</div>
-  <input id="ups-file" type="file" accept=".html,.xls,.xlsx,text/html,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none" onchange="importaRapportoUPS(this)">
+  <div class="meta" style="margin:5px 0 9px">Seleziona un rapportino HTML, XLS o XLSX. Il selettore Android potrebbe mostrare anche altri file, ma verranno accettati solo questi formati. Verranno importati cliente, indirizzo, referente, telefono e i dati delle apparecchiature UPS, anche per più UPS.</div>
+  <input id="ups-file" type="file" accept=".html,.htm,.xls,.xlsx,*/*" style="display:none" onchange="importaRapportoUPS(this)">
   <button class="secondary print" onclick="document.getElementById('ups-file').click()">📥 Importa rapportino HTML</button>
 </div>
 <div style="margin-top:10px">
