@@ -124,6 +124,17 @@ let db=JSON.parse(sessionStorage.getItem(KEY)||"[]"),sel=null;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const date=d=>d?d.split("-").reverse().join("/"):"—";
 function save(){sessionStorage.setItem(KEY,JSON.stringify(db));lista()}
+function elimina(){
+  const i=db.findIndex(z=>z.id===sel);
+  if(i<0){editor();return}
+  const x=db[i];
+  const nome=(x.client||"questo intervento").trim();
+  if(!confirm("Eliminare "+nome+"?\n\nQuesta operazione non può essere annullata.")) return;
+  db.splice(i,1);
+  sel=null;
+  save();
+  editor();
+}
 
 function nuovoUPS(){nuovoTipo("UPS")}
 function nuovoBticino(){nuovoTipo("BTICINO")}
