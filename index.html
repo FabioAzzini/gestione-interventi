@@ -1,6 +1,7 @@
 <!doctype html><html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Gestione Interventi</title>
+<!-- Interventi attivi: sessionStorage. Alla chiusura della sessione del browser/app vengono eliminati. -->
 <style>
 *{box-sizing:border-box}body{margin:0;background:#eef1f4;font:14px Arial;color:#263238}.app{max-width:1200px;margin:auto;padding:18px}
 header,.panel{background:#fff;border-radius:14px;box-shadow:0 3px 14px #0001;padding:16px}header{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:16px}header img{max-width:430px;width:58%}
@@ -66,10 +67,10 @@ label{display:block;font-size:12px;font-weight:bold;color:#68727a;margin:9px 0 4
 <div id="lista"></div></aside><main class="panel"><div id="editor"></div></main></div>
 </div>
 <script>
-const KEY="interventi_ups_lorenzi";let db=JSON.parse(localStorage.getItem(KEY)||"[]"),sel=null;
+const KEY="interventi_ups_lorenzi";let db=JSON.parse(sessionStorage.getItem(KEY)||"[]"),sel=null;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const date=d=>d?d.split("-").reverse().join("/"):"—";
-function save(){localStorage.setItem(KEY,JSON.stringify(db));lista()}
+function save(){sessionStorage.setItem(KEY,JSON.stringify(db));lista()}
 function nuovo(){let x={id:Date.now(),date:new Date().toISOString().slice(0,10),time:"08:30",client:"",location:"",address:"",contact:"",phone:"",status:"Aperto",room:"",works:[],notes:"",ups:[]};db.unshift(x);sel=x.id;save();editor()}
 function lista(){let q=(search.value||"").toLowerCase(),f=filter.value;
  let a=db.filter(x=>(!f||x.status==f)&&(`${x.client} ${x.location} ${x.room}`).toLowerCase().includes(q));
