@@ -1,7 +1,7 @@
 <!doctype html><html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Gestione Interventi</title>
-<!-- Interventi attivi: la sessione viene mantenuta durante l'uso e azzerata al nuovo avvio dell'app; un semplice reload mantiene il lavoro. -->
+<!-- Interventi attivi: sessione temporanea. Nessun intervento predefinito: una sessione nuova parte realmente vuota. -->
 <style>
 *{box-sizing:border-box}body{margin:0;background:#eef1f4;font:14px Arial;color:#263238}.app{max-width:1200px;margin:auto;padding:18px}
 header,.panel{background:#fff;border-radius:14px;box-shadow:0 3px 14px #0001;padding:16px}header{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:16px}header img{max-width:430px;width:58%}
@@ -385,7 +385,7 @@ function removeWork(i){db.find(x=>x.id==sel).works.splice(i,1);editor()}
 function elimina(){if(confirm("Eliminare questo intervento?")){db=db.filter(x=>x.id!=sel);sel=db[0]?.id||null;save();editor()}}
 function esporta(){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}));a.download="interventi_backup.json";a.click()}
 function importa(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=e=>{let r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);sel=db[0]?.id||null;save();editor()}catch{alert("File non valido")}};r.readAsText(e.target.files[0])};i.click()}
-if(!db.length){db=[{id:1,date:"2026-08-19",time:"08:30",client:"Stef Italia (Rif. Cubi)",location:"Nogarole Rocca",contact:"Matteo Meneghelli",phone:"340 240 7271",status:"Programmato",room:"Sala quadri logistica",ups:[],works:[{text:"KEOR COMPACT: sostituire n. 36 batterie da 9 Ah, esclusivamente nell'UPS.",done:false},{text:"TRIMOD MCS + B.BOX: eseguire esclusivamente il reset da PC.",done:false}],notes:""}];save()}sel=db[0].id;lista();editor();
+sel=db[0]?.id||null;lista();editor();
 </script>
 <script>
 if ('serviceWorker' in navigator) {
