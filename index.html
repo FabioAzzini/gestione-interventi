@@ -326,8 +326,10 @@ async function importaRapportoUPS(input){
        * e i relativi campi come u_mod_<id>, u_sn_<id>, ecc.
        */
       if(!Array.isArray(D.ups) || !D.ups.length){
-        const ids=Array.isArray(D.__ups)
-          ? D.__ups.map(v=>String(v)).filter(v=>v)
+        let rawIds=D.__ups;
+        if(typeof rawIds==='string'){ try{ rawIds=JSON.parse(rawIds); }catch(e){} }
+        const ids=Array.isArray(rawIds)
+          ? rawIds.map(v=>String(v)).filter(v=>v)
           : [];
 
         const legacyUps=[];
