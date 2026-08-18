@@ -68,6 +68,25 @@ label{display:block;font-size:12px;font-weight:bold;color:#68727a;margin:9px 0 4
 </div>
 <script>
 const KEY="interventi_ups_lorenzi";
+const ACTIVITY_KEY="interventi_ups_last_activity";
+const SESSION_TIMEOUT=120000;
+const now=Date.now();
+const lastActivity=Number(localStorage.getItem(ACTIVITY_KEY)||0);
+if(lastActivity && now-lastActivity>SESSION_TIMEOUT){
+  sessionStorage.removeItem(KEY);
+}
+localStorage.setItem(ACTIVITY_KEY,String(now));
+setInterval(()=>{
+  if(document.visibilityState==="visible"){
+    try{localStorage.setItem(ACTIVITY_KEY,String(Date.now()))}catch(e){}
+  }
+},15000);
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible"){
+    try{localStorage.setItem(ACTIVITY_KEY,String(Date.now()))}catch(e){}
+  }
+});
+
 const SESSION_STARTED="interventi_ups_session_started";
 const NAV_TYPE=(performance.getEntriesByType("navigation")[0]||{}).type||"navigate";
 // A normal reload keeps the current work. A new page/app launch starts a clean session.
