@@ -159,17 +159,22 @@ function renderBticinoEditor(x){
     <div><label>Tel. richiedente</label><input id="bt_requesterPhone" value="${esc(b.requesterPhone)}"></div>
     <div><label>Installatore</label><input id="bt_installer" value="${esc(b.installer)}"></div>
     <div><label>Tel. installatore</label><input id="bt_installerPhone" value="${esc(b.installerPhone)}"></div>
-    <div class="full"><label>Luogo intervento</label><input id="location" value="${esc(x.location)}"></div>
+    <div class="full"><label>Luogo / indirizzo intervento</label><input id="locationAddress" value="${esc([x.location,x.address].filter(Boolean).join(" · "))}"></div>
     <div class="full"><label>Nome cliente</label><input id="client" value="${esc(x.client)}"></div>
     <div><label>Tel. cliente</label><input id="phone" value="${esc(x.phone)}"></div>
-    <div class="full"><label>Indirizzo</label><input id="address" value="${esc(x.address)}"></div>
     <div class="full"><label>Tipologia di impianto</label><input id="bt_plantType1" value="${esc(plant)}"></div>
     <div class="full"><label>Serie Civile</label><input id="bt_civilSeries" value="${esc(b.civilSeries)}"></div>
     <div class="full"><label>Guasto lamentato</label><input id="bt_fault1" value="${esc(fault)}"></div>
     <div><label>Data installazione</label><input id="bt_installationDate" value="${esc(b.installationDate)}"></div>
     <div><label>Garanzia / Fuori Garanzia</label><select id="bt_warranty"><option value="">Seleziona</option><option ${b.warranty=="Garanzia"?"selected":""}>Garanzia</option><option ${b.warranty=="Fuori Garanzia"?"selected":""}>Fuori Garanzia</option></select></div>
     <div><label>MIS Aut.</label><input id="bt_misAut" value="${esc(b.misAut)}"></div>
-    <div class="full"><label>Intervento a carico di</label><input id="bt_chargeTo" value="${esc(b.chargeTo)}"></div>
+    <div class="full"><label>Intervento a carico di</label>
+      <select id="bt_chargeTo">
+        <option value="">Seleziona</option>
+        <option ${b.chargeTo=="Installatore"?"selected":""}>Installatore</option>
+        <option ${b.chargeTo=="Cliente"?"selected":""}>Cliente</option>
+      </select>
+    </div>
     <div class="full"><label>Pagamento</label><select id="bt_payment"><option value="">Seleziona</option><option ${b.payment=="Paga subito"?"selected":""}>Paga subito</option><option ${b.payment=="Fare Fattura / Ricevuta senza incasso"?"selected":""}>Fare Fattura / Ricevuta senza incasso</option><option ${b.payment=="Non a pagamento"?"selected":""}>Non a pagamento</option></select></div>
     <div><label>Comunicati i tariffari (IVA esclusa)</label><select id="bt_tariffCommunicated"><option value="">Seleziona</option><option ${b.tariffCommunicated=="Si"?"selected":""}>Si</option><option ${b.tariffCommunicated=="No"?"selected":""}>No</option></select></div>
     <div><label>Diritto fisso (€)</label><input id="bt_fixedFee" value="${esc(b.fixedFee)}"></div>
@@ -460,20 +465,31 @@ function parseExcelUPS(rowsOrWorkbook){
 
 function removeUPS(i){const x=db.find(z=>z.id==sel);x.ups.splice(i,1);save();editor()}
 
-function salva(){let x=db.find(z=>z.id==sel);if(!x)return;["date","time","client","location","address","status","contact","phone","room","notes"].forEach(k=>{const el=document.getElementById(k);if(el)x[k]=el.value.trim()});if(x.type==="BTICINO"){if(!x.bticino)x.bticino={};["requestMethod","requester","requesterPhone","installer","installerPhone","plantType1","civilSeries","fault1","installationDate","warranty","misAut","chargeTo","payment","tariffCommunicated","fixedFee","hourlyRate","notes1"].forEach(k=>{const el=document.getElementById("bt_"+k);if(el)x.bticino[k]=el.value.trim()});x.bticino.plantType2="";x.bticino.plantType3="";x.bticino.fault2="";x.bticino.fault3="";x.bticino.notes2="";x.bticino.notes3=""}save();if(x.type==="BTICINO"){const m=document.getElementById("save-msg");if(m){m.style.display="block";setTimeout(()=>m.style.display="none",1800)}}else editor()}
-function addWork(){let v=document.getElementById("newwork").value.trim();if(!v)return;db.find(x=>x.id==sel).works.push({text:v,done:false});editor()}
-function toggle(i){let x=db.find(x=>x.id==sel);x.works[i].done=!x.works[i].done;save()}
-function removeWork(i){db.find(x=>x.id==sel).works.splice(i,1);editor()}
-function elimina(){if(confirm("Eliminare questo intervento?")){db=db.filter(x=>x.id!=sel);sel=db[0]?.id||null;save();editor()}}
-function esporta(){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}));a.download="interventi_backup.json";a.click()}
-function importa(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=e=>{let r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);sel=db[0]?.id||null;save();editor()}catch{alert("File non valido")}};r.readAsText(e.target.files[0])};i.click()}
-sel=db[0]?.id||null;lista();editor();
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', {scope: './'}).catch(() => {});
+function salva(){let x=db.find(z=>z.id==sel);if(!x)return;
+["date","time","client","status","contact","phone","room","notes"].forEach(k=>{const el=document.getElementById(k);if(el)x[k]=el.value.trim()});
+if(x.type==="BTICINO"){
+  if(!x.bticino)x.bticino={};
+  const la=document.getElementById("locationAddress");
+  if(la){
+    const v=la.value.trim();
+    const parts=v.split(" · ");
+    x.location=parts.shift()||"";
+    x.address=parts.join(" · ");
+  }
+  ["requestMethod","requester","requesterPhone","installer","installerPhone","plantType1","civilSeries","fault1","installationDate","warranty","misAut","chargeTo","payment","tariffCommunicated","fixedFee","hourlyRate","notes1"].forEach(k=>{
+    const el=document.getElementById("bt_"+k);
+    if(el)x.bticino[k]=el.value.trim()
   });
+}else{
+  const loc=document.getElementById("location"),addr=document.getElementById("address");
+  if(loc)x.location=loc.value.trim();
+  if(addr)x.address=addr.value.trim();
+}
+save();
+if(x.type==="BTICINO"){
+  const msg=document.getElementById("save-msg");
+  if(msg){msg.style.display="block";setTimeout(()=>msg.style.display="none",1800)}
+}else editor()
 }
 </script>
 </body></html>
