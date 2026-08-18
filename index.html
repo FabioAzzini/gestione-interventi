@@ -1,7 +1,7 @@
 <!doctype html><html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Gestione Interventi</title>
-<!-- Interventi attivi: sessionStorage. Alla chiusura della sessione del browser/app vengono eliminati. -->
+<!-- Interventi attivi: la sessione viene mantenuta durante l'uso e azzerata al nuovo avvio dell'app; un semplice reload mantiene il lavoro. -->
 <style>
 *{box-sizing:border-box}body{margin:0;background:#eef1f4;font:14px Arial;color:#263238}.app{max-width:1200px;margin:auto;padding:18px}
 header,.panel{background:#fff;border-radius:14px;box-shadow:0 3px 14px #0001;padding:16px}header{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:16px}header img{max-width:430px;width:58%}
@@ -67,7 +67,15 @@ label{display:block;font-size:12px;font-weight:bold;color:#68727a;margin:9px 0 4
 <div id="lista"></div></aside><main class="panel"><div id="editor"></div></main></div>
 </div>
 <script>
-const KEY="interventi_ups_lorenzi";let db=JSON.parse(sessionStorage.getItem(KEY)||"[]"),sel=null;
+const KEY="interventi_ups_lorenzi";
+const SESSION_STARTED="interventi_ups_session_started";
+const NAV_TYPE=(performance.getEntriesByType("navigation")[0]||{}).type||"navigate";
+// A normal reload keeps the current work. A new page/app launch starts a clean session.
+if(NAV_TYPE!=="reload" && NAV_TYPE!=="back_forward" && sessionStorage.getItem(SESSION_STARTED)==="1"){
+  sessionStorage.removeItem(KEY);
+}
+sessionStorage.setItem(SESSION_STARTED,"1");
+let db=JSON.parse(sessionStorage.getItem(KEY)||"[]"),sel=null;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const date=d=>d?d.split("-").reverse().join("/"):"—";
 function save(){sessionStorage.setItem(KEY,JSON.stringify(db));lista()}
