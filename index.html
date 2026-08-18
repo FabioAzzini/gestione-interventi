@@ -142,7 +142,7 @@ function elimina(){
 function nuovoUPS(){nuovoTipo("UPS")}
 function nuovoBticino(){nuovoTipo("BTICINO")}
 function nuovoTipo(tipo){
-  let x={id:Date.now(),type:tipo,date:new Date().toISOString().slice(0,10),time:"08:30",client:"",location:"",address:"",contact:"",phone:"",status:"Aperto",room:"",works:[],notes:"",ups:[],bticino:{
+  let x={id:Date.now(),type:tipo,date:new Date().toISOString().slice(0,10),time:"08:30",client:"",location:"",address:"",contact:"",phone:"",email:"",status:"Aperto",room:"",works:[],notes:"",ups:[],bticino:{
     requestMethod:"",requester:"",requesterPhone:"",installer:"",installerPhone:"",
     plantType1:"",plantType2:"",plantType3:"",civilSeries:"",
     fault1:"",fault2:"",fault3:"",installationDate:"",warranty:"",misAut:"",
@@ -151,7 +151,7 @@ function nuovoTipo(tipo){
   }};
   db.unshift(x);sel=x.id;save();editor()
 }
-function nuovo(){let x={id:Date.now(),type:"UPS",date:new Date().toISOString().slice(0,10),time:"08:30",client:"",location:"",address:"",contact:"",phone:"",status:"Aperto",room:"",works:[],notes:"",ups:[]};db.unshift(x);sel=x.id;save();editor()}
+function nuovo(){let x={id:Date.now(),type:"UPS",date:new Date().toISOString().slice(0,10),time:"08:30",client:"",location:"",address:"",contact:"",phone:"",email:"",status:"Aperto",room:"",works:[],notes:"",ups:[]};db.unshift(x);sel=x.id;save();editor()}
 function lista(){let q=(search.value||"").toLowerCase(),f=filter.value;
  let a=db.filter(x=>(!f||x.status==f)&&(`${x.client} ${x.location} ${x.room}`).toLowerCase().includes(q));
  listaEl=document.getElementById("lista");listaEl.innerHTML=a.length?a.map(x=>`<div class="item ${x.id==sel?"sel":""} ${x.status=="Completato"?"done":x.status=="In corso"?"prog":""}" onclick="seleziona(${x.id})"><span class="badge">${esc(x.status)}</span><div class="client">${x.type==="BTICINO"?"🟦 BTicino":"⚡ UPS"} · ${esc(x.client||"Nuovo cliente")}</div><div class="meta">📅 ${date(x.date)} · ⏰ ${esc(x.time)}</div><div class="meta">📍 ${esc(x.location||"Luogo non indicato")}</div>${x.address?`<div class="meta">🏠 ${esc(x.address)}</div>`:""}</div>`).join(""):'<div class="empty">Nessun intervento</div>'}
@@ -211,6 +211,7 @@ e.innerHTML=`<div class="actions print"><button class="danger" onclick="elimina(
 <div class="full"><label>Cliente</label><input id="client" value="${esc(x.client)}"></div><div><label>Luogo / sede</label><input id="location" value="${esc(x.location)}"></div>
 <div><label>Stato</label><select id="status">${["Aperto","Programmato","In corso","Completato"].map(s=>`<option ${x.status==s?"selected":""}>${s}</option>`).join("")}</select></div>
 <div><label>Riferimento sul posto</label><input id="contact" value="${esc(x.contact)}"></div><div><label>Telefono</label><input id="phone" value="${esc(x.phone)}"></div>
+<div class="full"><label>Email cliente</label><input id="email" type="email" value="${esc(x.email||"")}"></div>
 <div class="full"><label>Sala / reparto</label><input id="room" value="${esc(x.room)}"></div></div>
 
 <div class="section"><h3><span class="screen-ups-icon">⚡ </span>Apparecchiature UPS</h3>
@@ -303,6 +304,23 @@ function addManualUPS(){
     materialReplaced:v("mu_materialReplaced"), components:"", note:v("mu_note")
   });
   save(); editor();
+}
+
+function scegliUPSdaImportare(ups){
+  return new Promise(resolve=>{
+    const ov=document.createElement("div");
+    ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px";
+    const box=document.createElement("div");
+    box.style.cssText="background:#fff;border-radius:22px;max-width:650px;width:100%;max-height:88vh;overflow:auto;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.3)";
+    const cards=ups.map((u,i)=>`<label style="display:block;border:2px solid #d7def3;border-radius:15px;padding:12px;margin:9px 0;cursor:pointer"><div style="display:flex;gap:12px;align-items:flex-start"><input class="ups-pick" type="checkbox" data-i="${i}" checked style="width:25px;height:25px;margin-top:3px"><div><b style="font-size:18px;color:#173c91">⚡ UPS ${i+1} · ${esc(u.model||"Modello non indicato")}</b><div class="meta">📍 ${esc(u.location||"Posizione non indicata")}</div><div class="meta" style="margin-top:5px">Matricola ${esc(u.serial||"—")} · ${esc(u.power||"—")} VA · ${esc(u.batteryCount||"—")} batterie</div></div></div></label>`).join("");
+    box.innerHTML=`<h2 style="margin-top:0">Seleziona gli UPS da importare</h2><div class="meta">Nel rapportino sono presenti ${ups.length} apparecchiature.</div>${cards}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:15px"><button id="pick-all" class="secondary">☑ Tutti</button><button id="pick-none" class="secondary">☐ Nessuno</button><button id="pick-ok" class="primary" style="flex:1">📥 Importa selezionati</button><button id="pick-cancel" class="secondary">Annulla</button></div>`;
+    ov.appendChild(box); document.body.appendChild(ov);
+    const checks=()=>[...box.querySelectorAll(".ups-pick")];
+    box.querySelector("#pick-all").onclick=()=>checks().forEach(c=>c.checked=true);
+    box.querySelector("#pick-none").onclick=()=>checks().forEach(c=>c.checked=false);
+    box.querySelector("#pick-cancel").onclick=()=>{ov.remove();resolve(null)};
+    box.querySelector("#pick-ok").onclick=()=>{const a=checks().filter(c=>c.checked).map(c=>ups[+c.dataset.i]);if(!a.length){alert("Seleziona almeno un UPS.");return}ov.remove();resolve(a)};
+  });
 }
 
 async function importaRapportoUPS(input){
@@ -399,30 +417,25 @@ async function importaRapportoUPS(input){
     if(loc) x.location=String(loc).trim();
     if(D.referente) x.contact=String(D.referente).trim();
     if(D.telefono) x.phone=String(D.telefono).trim();
+    if(D.email_cliente || D.email) x.email=String(D.email_cliente||D.email).trim();
 
     const ups=Array.isArray(D.ups) ? D.ups : [];
     if(!ups.length) throw new Error("Non sono state trovate apparecchiature UPS nel file.");
 
-    ups.forEach(u=>{
+    const scelti = ups.length>1 ? await scegliUPSdaImportare(ups) : ups;
+    if(!scelti || !scelti.length){ input.value=""; return; }
+
+    scelti.forEach(u=>{
       x.ups.push({
-        sourceFile:file.name,
-        location:u.location||"",
-        model:u.model||"",
-        serial:u.serial||"",
-        power:u.power||"",
-        mis:u.mis||"",
-        bypass:u.bypass||"",
-        batteryCount:u.batteryCount||"",
-        batteryType:u.batteryType||"",
-        batteryDate:u.batteryDate||"",
-        materialReplaced:u.materialReplaced||"",
-        components:u.components||"",
-        note:u.note||""
+        sourceFile:file.name, location:u.location||"", model:u.model||"", serial:u.serial||"",
+        power:u.power||"", mis:u.mis||"", bypass:u.bypass||"", batteryCount:u.batteryCount||"",
+        batteryType:u.batteryType||"", batteryDate:u.batteryDate||"", materialReplaced:u.materialReplaced||"",
+        components:u.components||"", note:u.note||""
       });
     });
 
     save(); editor();
-    alert("Importazione "+source+" completata: cliente/contatti e "+ups.length+" apparecchiatura/e UPS.");
+    alert("Importazione "+source+" completata: cliente/contatti e "+scelti.length+" apparecchiatura/e UPS.");
   }catch(err){
     console.error("Importazione rapportino UPS:",err);
     alert("Importazione non riuscita: "+(err&&err.message?err.message:"errore sconosciuto"));
@@ -540,7 +553,7 @@ function parseExcelUPS(rowsOrWorkbook){
 function removeUPS(i){const x=db.find(z=>z.id==sel);x.ups.splice(i,1);save();editor()}
 
 function salva(){let x=db.find(z=>z.id==sel);if(!x)return;
-["date","time","client","status","contact","phone","room","notes"].forEach(k=>{const el=document.getElementById(k);if(el)x[k]=el.value.trim()});
+["date","time","client","status","contact","phone","email","room","notes"].forEach(k=>{const el=document.getElementById(k);if(el)x[k]=el.value.trim()});
 if(x.type==="BTICINO"){
   if(!x.bticino)x.bticino={};
   const la=document.getElementById("locationAddress");
