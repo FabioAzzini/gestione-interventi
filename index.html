@@ -319,6 +319,63 @@ async function importaRapportoUPS(input){
       if(!node) throw new Error("Il file HTML non contiene i dati salvati del rapportino UPS.");
       D=JSON.parse(node.textContent||node.innerHTML||"");
       source="HTML";
+
+      /*
+       * Compatibilità con i rapportini HTML generati dall'app Rapportino UPS.
+       * Quei file non salvano le UPS in D.ups: salvano gli ID in D.__ups
+       * e i relativi campi come u_mod_<id>, u_sn_<id>, ecc.
+       */
+      if(!Array.isArray(D.ups) || !D.ups.length){
+        const ids=Array.isArray(D.__ups)
+          ? D.__ups.map(v=>String(v)).filter(v=>v)
+          : [];
+
+        const legacyUps=[];
+        ids.forEach(id=>{
+          const g=(prefix, fallback="")=>{
+            const v=D[prefix+"_"+id];
+            return v==null ? fallback : String(v).trim();
+          };
+
+          // Materiale sostituito: prova a ricostruire descrizione e quantità.
+          let materialReplaced="";
+          const mats=g("u_matsost");
+          if(mats){
+            if(mats.toUpperCase()==="SI"){
+              const parti=[];
+              for(let n=1;n<=20;n++){
+                const des=g("p_des_"+n);
+                const qty=g("p_qty_"+n);
+                if(des || qty) parti.push((des||"Materiale")+(qty?(" x "+qty):""));
+              }
+              materialReplaced=parti.length ? parti.join(", ") : "SI";
+            }else{
+              materialReplaced=mats;
+            }
+          }
+
+          const bypass=g("u_bypass");
+          const bypassNote=g("u_bypass_note");
+          const bypassValue=bypassNote ? (bypass ? bypass+" – "+bypassNote : bypassNote) : bypass;
+
+          legacyUps.push({
+            location:g("u_loc"),
+            model:g("u_mod"),
+            serial:g("u_sn"),
+            power:g("u_kva"),
+            mis:g("u_mis"),
+            bypass:bypassValue,
+            batteryCount:g("u_nbatt"),
+            batteryType:g("u_tipobatt"),
+            batteryDate:g("u_dbatt2"),
+            materialReplaced,
+            components:g("u_noteint"),
+            note:g("u_note")
+          });
+        });
+
+        if(legacyUps.length) D.ups=legacyUps;
+      }
     } else if(ext==="xls" || ext==="xlsx"){
       if(typeof XLSX==="undefined") throw new Error("Libreria Excel non disponibile. Controlla la connessione internet e riprova.");
       const buf=await file.arrayBuffer();
@@ -341,7 +398,7 @@ async function importaRapportoUPS(input){
     if(D.referente) x.contact=String(D.referente).trim();
     if(D.telefono) x.phone=String(D.telefono).trim();
 
-    const ups=D.ups||[];
+    const ups=Array.isArray(D.ups) ? D.ups : [];
     if(!ups.length) throw new Error("Non sono state trovate apparecchiature UPS nel file.");
 
     ups.forEach(u=>{
@@ -365,7 +422,8 @@ async function importaRapportoUPS(input){
     save(); editor();
     alert("Importazione "+source+" completata: cliente/contatti e "+ups.length+" apparecchiatura/e UPS.");
   }catch(err){
-    alert("Importazione non riuscita: "+err.message);
+    console.error("Importazione rapportino UPS:",err);
+    alert("Importazione non riuscita: "+(err&&err.message?err.message:"errore sconosciuto"));
   }
   input.value="";
 }
